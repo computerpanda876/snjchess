@@ -1,69 +1,112 @@
-import Image from "next/image";
+// The home page. All of its text comes from data/league.ts.
 
-export default function Home() {
+import Link from "next/link";
+import { cacheLife } from "next/cache";
+import { league } from "@/data/league";
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// "2026-10-16" -> { month: "Oct", day: 16 }
+function parts(date: string) {
+  const [, month, day] = date.split("-").map(Number);
+  return { month: MONTHS[month - 1], day };
+}
+
+// Today's date in New Jersey, as YYYY-MM-DD, so it can be compared to the round dates.
+function today() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+}
+
+export default async function Home() {
+  // Keep a saved copy of this page and rebuild it about once an hour,
+  // so the "next round" marker stays current without a new deploy.
+  "use cache";
+  cacheLife("hours");
+
+  const nextRound = league.rounds.findIndex((date) => date >= today());
+  const first = parts(league.rounds[0]);
+  const last = parts(league.rounds[league.rounds.length - 1]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              Hallo!
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
+    <>
+      {/* Title */}
+      <section className="pt-20 pb-16 sm:pt-32 sm:pb-24">
+        <p className="text-muted">{league.seasons[0].name}</p>
+        <h1 className="mt-4 max-w-4xl text-5xl leading-[0.95] font-extrabold tracking-tight sm:text-7xl lg:text-8xl">
+          {league.name}
+        </h1>
+        <p className="mt-8 max-w-xl text-lg leading-relaxed text-muted">
+          Team chess on Friday nights. {league.rounds.length} rounds from {first.month} {first.day}{" "}
+          to {last.month} {last.day}, four boards a match.
+        </p>
+
+        <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
+          {league.registrationUrl ? (
             <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              href={league.registrationUrl}
+              className="bg-accent px-7 py-4 font-semibold text-white hover:bg-ink"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              Register a team
+            </a>
+          ) : (
+            <span className="border border-line px-7 py-4 font-semibold text-muted">
+              Registration opens soon
+            </span>
+          )}
+          <Link href="/standings" className="font-semibold underline underline-offset-4 hover:text-accent">
+            Standings and pairings
+          </Link>
+        </div>
+      </section>
+
+      {/* Round dates */}
+      <section className="border-t border-ink py-12 sm:py-16">
+        <h2 className="text-2xl font-bold tracking-tight">Round dates</h2>
+        <ol className="mt-8 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-5">
+          {league.rounds.map((date, i) => {
+            const { month, day } = parts(date);
+            const isNext = i === nextRound;
+            return (
+              <li key={date} className={`border-t-2 pt-4 ${isNext ? "border-accent" : "border-line"}`}>
+                <p className={`text-sm ${isNext ? "font-semibold text-accent" : "text-muted"}`}>
+                  Round {i + 1}
+                  {isNext && ", next"}
+                </p>
+                <p className="mt-2 text-4xl font-extrabold tracking-tight tabular-nums lg:text-5xl">
+                  {month} {day}
+                </p>
+                <p className="mt-2 text-sm text-muted">Friday, {league.startTime}</p>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+
+      {/* Details */}
+      <section className="border-t border-ink py-12 sm:py-16">
+        <h2 className="text-2xl font-bold tracking-tight">How the league works</h2>
+        <dl className="mt-8">
+          {league.details.map((detail) => (
+            <div
+              key={detail.label}
+              className="grid gap-x-8 gap-y-1 border-t border-line py-6 sm:grid-cols-[14rem_1fr]"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+              <dt className="font-semibold">{detail.label}</dt>
+              <dd className="max-w-2xl leading-relaxed text-muted">
+                {detail.text}
+                {detail.link && (
+                  <a
+                    href={detail.link.href}
+                    className="mt-2 block font-semibold text-accent underline underline-offset-4"
+                  >
+                    {detail.link.label}
+                  </a>
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+    </>
   );
 }
