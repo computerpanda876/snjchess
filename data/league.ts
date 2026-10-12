@@ -21,7 +21,7 @@ export const league = {
 
   // Paste the Jumbula registration link between the quotes.
   // While it is empty, the button reads "Registration opens soon".
-  registrationUrl: "",
+  registrationUrl: "https://incntr.jumbula.com/SJICTournaments2026/SouthJerseyChessLeagueSeason2",
 
   // Round dates as YYYY-MM-DD, in order.
   rounds: ["2026-10-16", "2026-10-30", "2026-11-13", "2026-12-04", "2026-12-18"],
